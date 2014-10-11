@@ -1,3 +1,5 @@
+import xml.etree.ElementTree as ET
+
 from evernote.api.client import EvernoteClient
 from evernote.edam.notestore.ttypes import NoteFilter, NotesMetadataResultSpec
 from evernote.edam.type.ttypes import Notebook, Note
@@ -9,7 +11,9 @@ def retrieve_note_content():
     global client
     if client is None:
         client = HackzurichEvernoteClient()
-    return client.retrieve_note_content()
+    note_content = client.retrieve_note_content()
+    root = ET.fromstring(note_content)
+    return root.text
 
 
 class HackzurichEvernoteClient(object):
