@@ -4,6 +4,7 @@
 extern "C" {
 #endif
     const char * getNotes(void);
+    void makeNote(const char *imagePath);
 #ifdef __cplusplus
 }
 #endif

@@ -1,8 +1,12 @@
+import binascii
+import hashlib
 import xml.etree.ElementTree as ET
 
 from evernote.api.client import EvernoteClient
 from evernote.edam.notestore.ttypes import NoteFilter, NotesMetadataResultSpec
-from evernote.edam.type.ttypes import Notebook, Note
+from evernote.edam.type.ttypes import Notebook, Note, Data, Resource,\
+    ResourceAttributes
+from evernote.edam.error.ttypes import EDAMUserException, EDAMNotFoundException
 
 client = None
 
@@ -16,12 +20,27 @@ def retrieve_note_content():
     return root.text
 
 
+def make_note(file_path):
+    global client
+    if client is None:
+        client = HackzurichEvernoteClient()
+    with open(file_path, 'rb') as f:
+        full_image = f.read()
+        client.make_note_with_image(full_image)
+
+
 class HackzurichEvernoteClient(object):
 
     DEFAULT_NOTEBOOK_NAME = 'hackzurich 2014'
 
-    NOTE_BOILERPLATE = """<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE en-note SYSTEM "http://xml.evernote.com/pub/enml2.dtd">
-<en-note>{}</en-note>
+    NOTE_WITH_IMAGE = """<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE en-note SYSTEM "http://xml.evernote.com/pub/enml2.dtd">
+<en-note>{}
+<br/>
+<br/>
+Attachment with hash {}: <br/>
+<en-media type="{}" hash="{}"/><br/>
+</en-note>
     """
 
     def __init__(self):
@@ -47,6 +66,23 @@ class HackzurichEvernoteClient(object):
         self._default_notebook_guid = notebook.guid
         return self.get_notebook_guid()
 
+    def retrieve_note(self):
+        note_filter = NoteFilter(
+            order=2, notebookGuid=self.get_notebook_guid())
+        result_spec = NotesMetadataResultSpec(
+            includeTitle=True)
+        notesMetadata = self._note_store.findNotesMetadata(
+            note_filter, 0, 1, result_spec)
+        if notesMetadata.notes:
+            note_guid = notesMetadata.notes[0].guid
+            retrieved_note = self._note_store.getNote(
+                note_guid, False,
+                False,
+                True,
+                False)
+            for resource in retrieved_note.resources:
+                print resource
+
     def retrieve_note_content(self):
         note_filter = NoteFilter(
             order=2, notebookGuid=self.get_notebook_guid())
@@ -70,3 +106,47 @@ class HackzurichEvernoteClient(object):
         note.notebookGuid = notebook_guid
         self._note_store.createNote(note)
         return note.guid
+
+    def make_note_with_image(self, image_string):
+
+        note = Note()
+        note.title = 'Note created with ...'
+
+        data = Data()
+        data.body = image_string
+        hash_md5 = hashlib.md5()
+        hash_md5.update(data.body)
+        data.bodyHash = hash_md5.digest()
+        data.size = len(image_string)
+        resource = Resource()
+        resource.data = data
+        resource.mime = 'image/jpeg'
+        resource.width = 4160
+        resource.height = 3120
+        resource_attr = ResourceAttributes()
+        resource_attr.attachment = False
+        resource.attributes = resource_attr
+        note.resources = [resource]
+
+        hexhash = binascii.hexlify(resource.data.bodyHash)
+        note.content = HackzurichEvernoteClient.NOTE_WITH_IMAGE.format(
+            '', hexhash, 'image/jpeg', hexhash)
+
+        note.notebookGuid = self.get_notebook_guid()
+
+        try:
+            created_note = self._note_store.createNote(note)
+        except EDAMUserException as edue:
+            print "EDAMUserException:", edue
+            return None
+        except EDAMNotFoundException:
+            print "EDAMNotFoundException: Invalid parent notebook GUID"
+            return None
+        return created_note
+
+
+# with open('/home/diegob/Pictures/ocr-2.jpg', 'rb') as f:
+#     full_image = f.read()
+#     client = HackzurichEvernoteClient()
+#     client.make_note_with_image(full_image)
+#     client.retrieve_note()
