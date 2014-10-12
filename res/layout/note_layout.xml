@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:padding="10dp" >
+
+    <ImageView
+        android:id="@+id/custom_view_post_background"
+        android:layout_width="250dp"
+        android:layout_height="200dp"
+        android:layout_centerInParent="true"
+        android:contentDescription="@string/content_description_background"
+        android:scaleType="fitXY"
+        android:src="@drawable/post_it_note_background" />
+    <LinearLayout android:id="@+id/custom_view_information_container"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:orientation="vertical"
+        android:paddingLeft="10dp">
+    <TextView
+        android:id="@+id/post_note_title"
+        android:layout_width="200dp"
+        android:layout_height="wrap_content"
+        android:textColor="@color/black"
+        android:textSize="@dimen/overlay_title" />
+    <TextView
+        android:id="@+id/post_note_content"
+        android:layout_width="200dp"
+        android:layout_height="wrap_content"
+        android:textColor="@color/black"
+        android:textSize="@dimen/overlay_content" />
+    <TextView
+       android:id="@+id/custom_view_touch_for_more"
+       android:layout_width="200dp"
+       android:layout_height="wrap_content"
+       android:layout_marginTop="10dp"
+       android:singleLine="true"
+       android:text="@string/book_data_touch_for_more"
+       android:textColor="@color/holo_light_blue"
+       android:textSize="@dimen/overlay_touch_for_more" />
+       </LinearLayout>
+
+</RelativeLayout>
